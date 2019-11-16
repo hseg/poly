@@ -58,14 +58,14 @@ gcdNonEmpty xs ys = runST $ do
     let lenZs = MG.length zs'
         go acc 0 = pure acc
         go acc n = do
-          t <- MG.unsafeRead zs' (n - 1)
+          t <- MG.read zs' (n - 1)
           go (acc `gcd` t) (n - 1)
-    a <- MG.unsafeRead zs' (lenZs - 1)
+    a <- MG.read zs' (lenZs - 1)
     z <- go a (lenZs - 1)
 
     let err = error "gcdNonEmpty: violated internal invariant"
     forM_ [0 .. lenZs - 1] $ \i ->
-      MG.unsafeModify
+      MG.modify
         zs'
         (\c -> maybe err (`times` xy) (c `divide` z))
         i
@@ -83,8 +83,8 @@ gcdM xs ys
   | otherwise = do
   let lenXs = MG.length xs
       lenYs = MG.length ys
-  xLast <- MG.unsafeRead xs (lenXs - 1)
-  yLast <- MG.unsafeRead ys (lenYs - 1)
+  xLast <- MG.read xs (lenXs - 1)
+  yLast <- MG.read ys (lenYs - 1)
   let z = xLast `lcm` yLast
       zx = case z `divide` xLast of
         Nothing -> error "gcdM: highest coefficient is 0"
@@ -95,24 +95,24 @@ gcdM xs ys
 
   if lenXs <= lenYs then do
     forM_ [0 .. lenXs - 1] $ \i -> do
-      x <- MG.unsafeRead xs i
-      MG.unsafeModify
+      x <- MG.read xs i
+      MG.modify
         ys
         (\y -> (y `times` zy) `minus` x `times` zx)
         (i + lenYs - lenXs)
     forM_ [0 .. lenYs - lenXs - 1] $
-      MG.unsafeModify ys (`times` zy)
+      MG.modify ys (`times` zy)
     ys' <- dropWhileEndM isZero ys
     gcdM xs ys'
   else do
     forM_ [0 .. lenYs - 1] $ \i -> do
-      y <- MG.unsafeRead ys i
-      MG.unsafeModify
+      y <- MG.read ys i
+      MG.modify
         xs
         (\x -> (x `times` zx) `minus` y `times` zy)
         (i + lenXs - lenYs)
     forM_ [0 .. lenXs - lenYs - 1] $
-      MG.unsafeModify xs (`times` zx)
+      MG.modify xs (`times` zx)
     xs' <- dropWhileEndM isZero xs
     gcdM xs' ys
 {-# INLINABLE gcdM #-}
@@ -125,7 +125,7 @@ isZeroM xs = go (MG.length xs)
   where
     go 0 = pure True
     go n = do
-      x <- MG.unsafeRead xs (n - 1)
+      x <- MG.read xs (n - 1)
       if x == zero then go (n - 1) else pure False
 {-# INLINE isZeroM #-}
 
@@ -142,9 +142,9 @@ quotient xs ys
     let lenXs = G.length xs
         lenYs = G.length ys
         lenQs = lenXs - lenYs + 1
-    qs <- MG.unsafeNew lenQs
-    rs <- MG.unsafeNew lenXs
-    G.unsafeCopy rs xs
+    qs <- MG.new lenQs
+    rs <- MG.new lenXs
+    G.copy rs xs
 
     let go i
           | i < 0 = do
@@ -153,15 +153,15 @@ quotient xs ys
               then Just <$> G.unsafeFreeze qs
               else pure Nothing
           | otherwise = do
-            r <- MG.unsafeRead rs (lenYs - 1 + i)
-            case r `divide` G.unsafeLast ys of
+            r <- MG.read rs (lenYs - 1 + i)
+            case r `divide` G.last ys of
               Nothing -> pure Nothing
               Just q -> do
-                MG.unsafeWrite qs i q
+                MG.write qs i q
                 forM_ [0 .. lenYs - 1] $ \k -> do
-                  MG.unsafeModify
+                  MG.modify
                     rs
-                    (\c -> c `minus` q `times` G.unsafeIndex ys k)
+                    (\c -> c `minus` q `times` (G.!) ys k)
                     (i + k)
                 go (i - 1)
 

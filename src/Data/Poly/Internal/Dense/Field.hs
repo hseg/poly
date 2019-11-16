@@ -55,16 +55,16 @@ quotientAndRemainder xs ys
     let lenXs = G.length xs
         lenYs = G.length ys
         lenQs = lenXs - lenYs + 1
-    qs <- MG.unsafeNew lenQs
-    rs <- MG.unsafeNew lenXs
-    G.unsafeCopy rs xs
+    qs <- MG.new lenQs
+    rs <- MG.new lenXs
+    G.copy rs xs
     forM_ [lenQs - 1, lenQs - 2 .. 0] $ \i -> do
-      r <- MG.unsafeRead rs (lenYs - 1 + i)
-      let q = r `quot` G.unsafeLast ys
-      MG.unsafeWrite qs i q
+      r <- MG.read rs (lenYs - 1 + i)
+      let q = r `quot` G.last ys
+      MG.write qs i q
       forM_ [0 .. lenYs - 1] $ \k -> do
-        MG.unsafeModify rs (\c -> c `minus` q `times` G.unsafeIndex ys k) (i + k)
-    let rs' = MG.unsafeSlice 0 lenYs rs
+        MG.modify rs (\c -> c `minus` q `times` (G.!) ys k) (i + k)
+    let rs' = MG.slice 0 lenYs rs
     (,) <$> G.unsafeFreeze qs <*> G.unsafeFreeze rs'
 {-# INLINABLE quotientAndRemainder #-}
 
@@ -79,7 +79,7 @@ remainder xs ys
     rs <- G.thaw xs
     ys' <- G.unsafeThaw ys
     remainderM rs ys'
-    G.unsafeFreeze $ MG.unsafeSlice 0 (G.length xs `min` G.length ys) rs
+    G.unsafeFreeze $ MG.slice 0 (G.length xs `min` G.length ys) rs
 {-# INLINABLE remainder #-}
 
 remainderM
@@ -94,14 +94,14 @@ remainderM xs ys
     let lenXs = MG.length xs
         lenYs = MG.length ys
         lenQs = lenXs - lenYs + 1
-    yLast <- MG.unsafeRead ys (lenYs - 1)
+    yLast <- MG.read ys (lenYs - 1)
     forM_ [lenQs - 1, lenQs - 2 .. 0] $ \i -> do
-      r <- MG.unsafeRead xs (lenYs - 1 + i)
+      r <- MG.read xs (lenYs - 1 + i)
       forM_ [0 .. lenYs - 1] $ \k -> do
-        y <- MG.unsafeRead ys k
+        y <- MG.read ys k
         -- do not move r / yLast outside the loop,
         -- because of numerical instability
-        MG.unsafeModify xs (\c -> c `minus` r `times` y `quot` yLast) (i + k)
+        MG.modify xs (\c -> c `minus` r `times` y `quot` yLast) (i + k)
 {-# INLINABLE remainderM #-}
 
 fieldGcd
