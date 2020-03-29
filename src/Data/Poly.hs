@@ -24,9 +24,11 @@ module Data.Poly
   , deriv
   , integral
   , PolyOverField(..)
+  , gcdExt
   ) where
 
 import Data.Poly.Internal.Dense
 import Data.Poly.Internal.Dense.Field ()
 import Data.Poly.Internal.Dense.GcdDomain ()
 import Data.Poly.Internal.PolyOverField
+import Data.Euclidean (gcdExt)

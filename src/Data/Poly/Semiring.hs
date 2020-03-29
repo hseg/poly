@@ -24,9 +24,10 @@ module Data.Poly.Semiring
   , deriv
   , integral
   , PolyOverField(..)
+  , gcdExt
   ) where
 
-import Data.Euclidean (Field)
+import Data.Euclidean (Field, gcdExt)
 import Data.Semiring (Semiring)
 import qualified Data.Vector.Generic as G
 
